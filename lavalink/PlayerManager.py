@@ -83,6 +83,7 @@ class DefaultPlayer(BasePlayer):
         """ Connects to a voice channel. """
         ws = self._lavalink.bot._connection._get_websocket(int(self.guild_id))
         await ws.voice_state(self.guild_id, str(channel_id))
+        await self.reset_equalizer()
 
     async def disconnect(self):
         """ Disconnects from the voice channel, if any. """
@@ -227,7 +228,7 @@ class DefaultPlayer(BasePlayer):
         self.equalizer[band] = gain
         await self.node.ws.send(op='equalizer', guildId=self.guild_id, bands=[{'band': band, 'gain': gain}])
 
-    async def set_gains(self, gain_list: list):
+    async def set_gains(self, *gain_list):
         """ (Only Lavalink v3.1 or higher) Sets equalizer to the specified values in the list. Must have 16 values. """
         if not self.node.server_version == 3 and not self.node.ws._is_v31:
             raise UnsupportedLavalinkVersion('Lavalink version must be at least 3.1')
