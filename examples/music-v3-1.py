@@ -287,12 +287,12 @@ class Music:
         player = await self.get_player(ctx.guild)
 
         levels = {
-                'OFF': [(0, 0), (1, 0)],
-                'LOW': [(0, 0.25), (1, 0.15)],
-                'MEDIUM': [(0, 0.50), (1, 0.25)],
-                'HIGH': [(0, 0.75), (1, 0.50)],
-                'INSANE': [(0, 1), (1, 0.75)]
-                }
+            'OFF': [(0, 0), (1, 0)],
+            'LOW': [(0, 0.25), (1, 0.15)],
+            'MEDIUM': [(0, 0.50), (1, 0.25)],
+            'HIGH': [(0, 0.75), (1, 0.50)],
+            'INSANE': [(0, 1), (1, 0.75)]
+        }
 
         if not level:
             for k, v in levels.items():
@@ -301,13 +301,15 @@ class Music:
                     break
             return await ctx.send('Bass boost currently set on `{}`.'.format(level if level else 'CUSTOM'))
 
-        if level.upper()[0] not in [n[0] for n in levels.keys()]:
-            return await ctx.send('Invalid level.')
+        gain = None
 
         for k in levels.keys():
             if k.startswith(level.upper()):
                 gain = levels[k]
                 break
+
+        if not gain:
+            return await ctx.send('Invalid level.')
 
         await player.set_gains(*gain)
 
