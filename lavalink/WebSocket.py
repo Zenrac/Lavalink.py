@@ -6,7 +6,7 @@ import websockets
 
 from .Events import TrackStuckEvent, TrackExceptionEvent, TrackEndEvent, StatsUpdateEvent, VoiceWebSocketClosedEvent
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("launcher")
 
 
 class WebSocket:
