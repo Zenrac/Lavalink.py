@@ -13,7 +13,7 @@ class WebSocket:
         self._lavalink = lavalink
         self._node = node
 
-        self.session = None
+        self.session = aiohttp.ClientSession()
         self._ws = None
         self._queue = []
         self._ws_retry = ws_retry
@@ -42,7 +42,6 @@ class WebSocket:
         self._user_id = self._lavalink.bot.user.id
         recon_try = 1
         backoff_range = [min(max(x, 3), 30) for x in range(0, self._ws_retry * 5, 5)]
-        self.session = aiohttp.ClientSession(loop=self._loop)
 
         headers = {
             'Authorization': str(self._password),
