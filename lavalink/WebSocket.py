@@ -13,7 +13,7 @@ class WebSocket:
         self._lavalink = lavalink
         self._node = node
 
-        self.session = None
+        self._session = aiohttp.ClientSession()
         self._ws = None
         self._queue = []
         self._ws_retry = ws_retry
@@ -42,7 +42,6 @@ class WebSocket:
         self._user_id = self._lavalink.bot.user.id
         recon_try = 1
         backoff_range = [min(max(x, 3), 30) for x in range(0, self._ws_retry * 5, 5)]
-        self.session = aiohttp.ClientSession(loop=self._loop)
 
         headers = {
             'Authorization': str(self._password),
@@ -50,18 +49,17 @@ class WebSocket:
             'User-Id': str(self._user_id)
         }
         while not self._shutdown and recon_try < len(backoff_range):
-            #  self._node.set_offline()
+            self._node.set_offline()
             self._ws = None
-            async with self.session.ws_connect(self._uri, heartbeat=5.0, headers=headers) as ws:
+            async with self._session.ws_connect(self._uri, headers=headers) as ws:
                 self._node.set_online()
                 self._ws = ws
                 recon_try = 1
                 for entry in self._queue:
                     await ws.send_json(entry)
-                async for msg in ws:
-                    if msg.type == aiohttp.WSMsgType.PING:
-                        await ws.pong()
-                    elif msg.type == aiohttp.WSMsgType.TEXT:
+                while True:
+                    msg = await ws.receive()
+                    if msg.type == aiohttp.WSMsgType.TEXT:
                         data = msg.json()
                         op = data.get('op', None)
                         if op == 'event':
@@ -79,7 +77,6 @@ class WebSocket:
                                 event = VoiceWebSocketClosedEvent(player, data['code'], data['reason'], data['byRemote'])
                                 if event.code == 4006:
                                     self._lavalink.loop.create_task(player.ws_reset_handler())
-
                             if event:
                                 await self._lavalink.dispatch_event(event)
                         elif op == 'playerUpdate':
@@ -91,8 +88,8 @@ class WebSocket:
                         self._node.set_offline()
                         self._ws = None
                         break
-            await asyncio.sleep(backoff_range[recon_try - 1])
-            recon_try += 1
+                await asyncio.sleep(backoff_range[recon_try - 1])
+                recon_try += 1
 
     async def send(self, **data):
         if self.connected:
