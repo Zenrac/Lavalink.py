@@ -54,42 +54,42 @@ class WebSocket:
             async with self.session.ws_connect(self._uri, headers=headers) as ws:
                 self._node.set_online()
                 self._ws = ws
-		for entry in self._queue:
-			await ws.send_json(entry)
                 recon_try = 1
-		while True:
-			msg = await ws.receive()
-			if msg.type == aiohttp.WSMsgType.TEXT:
-				data = msg.json()
-				op = data.get('op', None)
-				if op == 'event':
-					log.debug('Received event of type {}'.format(data['type']))
-					player = self._lavalink.players[int(data['guildId'])]
-					event = None
+                for entry in self._queue:
+                    await ws.send_json(entry)
+                while True:
+                    msg = await ws.receive()
+                    if msg.type == aiohttp.WSMsgType.TEXT:
+                        data = msg.json()
+                        op = data.get('op', None)
+                        if op == 'event':
+                            log.debug('Received event of type {}'.format(data['type']))
+                            player = self._lavalink.players[int(data['guildId'])]
+                            event = None
 
-					if data['type'] == 'TrackEndEvent':
-						event = TrackEndEvent(player, data['track'], data['reason'])
-					elif data['type'] == 'TrackExceptionEvent':
-						event = TrackExceptionEvent(player, data['track'], data['error'])
-					elif data['type'] == 'TrackStuckEvent':
-						event = TrackStuckEvent(player, data['track'], data['thresholdMs'])
-					elif data['type'] == 'WebSocketClosedEvent':
-						event = VoiceWebSocketClosedEvent(player, data['code'], data['reason'], data['byRemote'])
-						if event.code == 4006:
-							self._lavalink.loop.create_task(player.ws_reset_handler())
-					if event:
-						await self._lavalink.dispatch_event(event)
-				elif op == 'playerUpdate':
-					await self._lavalink.update_state(data)
-				elif op == 'stats':
-					self._node.stats._update(data)
-					await self._lavalink.dispatch_event(StatsUpdateEvent(self._node))
-			elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
-				self._node.set_offline()
-				self._ws = None
-				break
-            await asyncio.sleep(backoff_range[recon_try - 1])
-            recon_try += 1
+                            if data['type'] == 'TrackEndEvent':
+                                event = TrackEndEvent(player, data['track'], data['reason'])
+                            elif data['type'] == 'TrackExceptionEvent':
+                                event = TrackExceptionEvent(player, data['track'], data['error'])
+                            elif data['type'] == 'TrackStuckEvent':
+                                event = TrackStuckEvent(player, data['track'], data['thresholdMs'])
+                            elif data['type'] == 'WebSocketClosedEvent':
+                                event = VoiceWebSocketClosedEvent(player, data['code'], data['reason'], data['byRemote'])
+                                if event.code == 4006:
+                                    self._lavalink.loop.create_task(player.ws_reset_handler())
+                            if event:
+                                await self._lavalink.dispatch_event(event)
+                        elif op == 'playerUpdate':
+                            await self._lavalink.update_state(data)
+                        elif op == 'stats':
+                            self._node.stats._update(data)
+                            await self._lavalink.dispatch_event(StatsUpdateEvent(self._node))
+                    elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
+                        self._node.set_offline()
+                        self._ws = None
+                        break
+                    await asyncio.sleep(backoff_range[recon_try - 1])
+                    recon_try += 1
 
     async def send(self, **data):
         if self.connected:
@@ -100,4 +100,4 @@ class WebSocket:
             self._queue.append(data)
 
     def destroy(self):
-		self._shutdown = True
+        self._shutdown = True
