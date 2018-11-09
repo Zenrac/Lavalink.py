@@ -88,8 +88,8 @@ class WebSocket:
                         self._node.set_offline()
                         self._ws = None
                         break
-                    await asyncio.sleep(backoff_range[recon_try - 1])
-                    recon_try += 1
+                await asyncio.sleep(backoff_range[recon_try - 1])
+                recon_try += 1
 
     async def send(self, **data):
         if self.connected:
