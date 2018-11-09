@@ -89,7 +89,7 @@ class WebSocket:
                     elif data['type'] == 'WebSocketClosedEvent':
                         event = VoiceWebSocketClosedEvent(player, data['code'], data['reason'], data['byRemote'])
                         if event.code == 4006:
-                            self._lavalink.loop.create_task(player.ws_reset_handler())
+                            #  self._lavalink.loop.create_task(player.ws_reset_handler())
                     if event:
                         await self._lavalink.dispatch_event(event)
                 elif op == 'playerUpdate':
