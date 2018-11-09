@@ -13,7 +13,7 @@ class WebSocket:
         self._lavalink = lavalink
         self._node = node
 
-        self.session = aiohttp.ClientSession()
+        self._session = aiohttp.ClientSession()
         self._ws = None
         self._queue = []
         self._ws_retry = ws_retry
@@ -51,7 +51,7 @@ class WebSocket:
         while not self._shutdown and recon_try < len(backoff_range):
             self._node.set_offline()
             self._ws = None
-            async with self.session.ws_connect(self._uri, headers=headers) as ws:
+            async with self._session.ws_connect(self._uri, headers=headers) as ws:
                 self._node.set_online()
                 self._ws = ws
                 recon_try = 1
