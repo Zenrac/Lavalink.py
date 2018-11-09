@@ -94,16 +94,16 @@ class Regions:
 
 
 class LavalinkNode:
-    def __init__(self, manager, host, password, regions, rest_port: int = 2333, ws_port: int = 80,
+    def __init__(self, manager, host, password, regions, port: int = 2333,
                  ws_retry: int = 10, shard_count: int = 1):
         self.regions = regions
         self._lavalink = manager._lavalink
         self.manager = manager
-        self.rest_uri = 'http://{}:{}/loadtracks?identifier='.format(host, rest_port)
+        self.rest_uri = 'http://{}:{}/loadtracks?identifier='.format(host, port)
         self.password = password
 
         self.ws = WebSocket(
-            manager._lavalink, self, host, password, ws_port, rest_port, ws_retry, shard_count
+            manager._lavalink, self, host, password, port, ws_retry, shard_count
         )
         self.server_version = 2
         self.stats = Stats()
@@ -195,9 +195,9 @@ class NodeManager:
             self.nodes_by_region.update({region: default_node})
         self._lavalink.loop.create_task(self._lavalink.dispatch_event(NodeDisabledEvent(node)))
 
-    def add(self, regions: Regions, host='localhost', rest_port=2333, password='', ws_retry=10, ws_port=80,
-            shard_count=1):
-        node = LavalinkNode(self, host, password, regions, rest_port, ws_port, ws_retry, shard_count)
+    def add(self, regions: Regions, host: str = 'localhost', port: int = 2333,
+            password: str = 'youshallnotpass', ws_retry: int = 10, shard_count: int = 1):
+        node = LavalinkNode(self, host, password, regions, port, ws_retry, shard_count)
         self.offline_nodes.append(node)
 
     def get_rest(self):
