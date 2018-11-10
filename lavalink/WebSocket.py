@@ -68,7 +68,7 @@ class WebSocket:
     async def _listen(self):
         self._node.set_online()
         for entry in self._queue:
-            await ws.send_json(entry)
+            await self._ws.send_json(entry)
         while self.connected:
             msg = await self._ws.receive()
             if msg.type == aiohttp.WSMsgType.TEXT:
