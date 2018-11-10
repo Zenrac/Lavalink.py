@@ -27,6 +27,7 @@ class WebSocket:
         self._is_v31 = True  # TODO: Remove _is_v31 here and from other files
 
         self._shutdown = False
+        self._first_try = True
 
         self._loop = self._lavalink.loop
         self._loop.create_task(self.connect())  # TODO: Consider making add_node an async function to prevent creating a bunch of tasks?
@@ -54,7 +55,8 @@ class WebSocket:
                                                       heartbeat=5.0, headers=headers)
         except aiohttp.ClientConnectorError:
             if self.tries < self.max_tries:
-                self.tries += 1
+                if self._first_try:  # If never connected, stop to try after 5 tries, otherwise infinite tries.
+                    self.tries += 1
                 log.warn('Failed to connect to node {}, retrying in 5s...'.format(self._uri))
                 await asyncio.sleep(5.0)
                 await self.connect()  # TODO: Consider a backoff or max retry attempt. Not sure why max_attempts would come in handy considering you *want* to connect to Lavalink
@@ -63,6 +65,7 @@ class WebSocket:
                 self._node.set_offline()
         else:
             self.tries = 0
+            self._first_try = False
             asyncio.ensure_future(self._listen())
 
     async def _listen(self):
@@ -114,7 +117,7 @@ class WebSocket:
             await self._ws.send_json(data)
         else:
             log.debug('Send called before node {} ready, payload queued: {}'.format(self._uri, str(data)))
-            self._message_queue.append(data)
+            self._queue.append(data)
 
     def destroy(self):
         self._shutdown = True
