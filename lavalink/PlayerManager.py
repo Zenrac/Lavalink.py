@@ -88,7 +88,7 @@ class DefaultPlayer(BasePlayer):
         """ Disconnects from the voice channel, if any. """
         if not self.is_connected:
             return
-        
+
         await self.reset_equalizer()
 
         self.channel_id = None
