@@ -173,7 +173,8 @@ class Client:
         guild_id = int(data['d']['guild_id'])
         player = self.players[guild_id]
         if not player:
-            log.debug('Client received an update for a non-existent player. {}'.format(guild_id))
+            # log.debug('Client received an update for a non-existent player. {}'.format(guild_id))
+            # Who got the idea to log everything from this shit ? Fuck off
             return
 
         if data['t'] == 'VOICE_SERVER_UPDATE':

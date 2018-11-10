@@ -51,8 +51,7 @@ class WebSocket:
 
         try:
             self._ws = await self._session.ws_connect('ws://{}:{}'.format(self._host, self._port),
-                                                      heartbeat=5.0,
-                                                      headers=headers)
+                                                      heartbeat=5.0, headers=headers)
         except aiohttp.ClientConnectorError:
             if self.tries < self.max_tries:
                 self.tries += 1
@@ -60,7 +59,7 @@ class WebSocket:
                 await asyncio.sleep(5.0)
                 await self.connect()  # TODO: Consider a backoff or max retry attempt. Not sure why max_attempts would come in handy considering you *want* to connect to Lavalink
             else:
-                log.warn('Failed to connect to node {}, and max amount of try reached.')
+                log.warn('Failed to connect to node {}, and max amount of try reached.'.format(self._uri))
                 self._node.set_offline()
         else:
             self.tries = 0
@@ -76,22 +75,7 @@ class WebSocket:
                 data = msg.json()
                 op = data.get('op', None)
                 if op == 'event':
-                    log.debug('Received event from node {} of type {}'.format(self._uri, data['type']))
-                    player = self._lavalink.players[int(data['guildId'])]
-                    event = None
-
-                    if data['type'] == 'TrackEndEvent':
-                        event = TrackEndEvent(player, data['track'], data['reason'])
-                    elif data['type'] == 'TrackExceptionEvent':
-                        event = TrackExceptionEvent(player, data['track'], data['error'])
-                    elif data['type'] == 'TrackStuckEvent':
-                        event = TrackStuckEvent(player, data['track'], data['thresholdMs'])
-                    elif data['type'] == 'WebSocketClosedEvent':
-                        event = VoiceWebSocketClosedEvent(player, data['code'], data['reason'], data['byRemote'])
-                        #  if event.code == 4006:
-                            #  self._lavalink.loop.create_task(player.ws_reset_handler())
-                    if event:
-                        await self._lavalink.dispatch_event(event)
+                    await self._manage_event(data)
                 elif op == 'playerUpdate':
                     await self._lavalink.update_state(data)
                 elif op == 'stats':
@@ -101,6 +85,22 @@ class WebSocket:
                 self._node.set_offline()
                 self._ws = None
                 break
+
+    async def _manage_event(self, data):
+        log.debug('Received event from node {} of type {}'.format(self._uri, data['type']))
+        player = self._lavalink.players[int(data['guildId'])]
+        event = None
+
+        if data['type'] == 'TrackEndEvent':
+            event = TrackEndEvent(player, data['track'], data['reason'])
+        elif data['type'] == 'TrackExceptionEvent':
+            event = TrackExceptionEvent(player, data['track'], data['error'])
+        elif data['type'] == 'TrackStuckEvent':
+            event = TrackStuckEvent(player, data['track'], data['thresholdMs'])
+        elif data['type'] == 'WebSocketClosedEvent':
+            event = VoiceWebSocketClosedEvent(player, data['code'], data['reason'], data['byRemote'])
+        if event:
+            await self._lavalink.dispatch_event(event)
 
     async def _ws_disconnect(self, code: int, reason: str, reconnect: bool):
         self._ws = None
