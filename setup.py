@@ -11,7 +11,7 @@ if not version:
     raise RuntimeError('version is not set')
 
 setup(
-    name='lavalink',
+    name='zenraclink',
     packages=['lavalink'],
     version=version,
     description='A lavalink interface built for discord.py',
@@ -19,7 +19,7 @@ setup(
     author_email='luke@serux.pro',
     url='https://github.com/Devoxin/Lavalink.py',
     download_url='https://github.com/Devoxin/Lavalink.py/archive/{}.tar.gz'.format(version),
-    keywords=['lavalink'],
+    keywords=['lavalink', 'zenraclink'],
     include_package_data=True,
     install_requires=['aiohttp']
 )
