@@ -88,6 +88,8 @@ class WebSocket:
                 self._node.set_offline()
                 self._ws = None
                 break
+        log.warn('Node {} disconnected, reconnecting...'.format(self._uri))
+        await self.connect()
 
     async def _manage_event(self, data):
         log.debug('Received event from node {} of type {}'.format(self._uri, data['type']))
