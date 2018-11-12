@@ -35,6 +35,8 @@ class WebSocket:
         self.max_tries = 5
         self.tries = 0
 
+        self.closers = (aiohttp.WSMsgType.close, aiohttp.WSMsgType.closing, aiohttp.WSMsgType.closed, aiohttp.WSMsgType.error)
+
     @property
     def connected(self):
         """ Returns whether there is a valid WebSocket connection to the Lavalink server or not. """
@@ -57,11 +59,14 @@ class WebSocket:
             if self.tries < self.max_tries:
                 if self._first_try:  # If never connected, stop to try after 5 tries, otherwise infinite tries.
                     self.tries += 1
-                log.warn('Failed to connect to node {}, retrying in 5s...'.format(self._uri))
+                log.warning('Failed to connect to node {}, retrying in 5s...'.format(self._uri))
                 await asyncio.sleep(5.0)
-                await self.connect()  # TODO: Consider a backoff or max retry attempt. Not sure why max_attempts would come in handy considering you *want* to connect to Lavalink
+                await self.connect()
+                # TODO: Consider a backoff or max retry attempt.
+                # Not sure why max_attempts would come in handy considering you *want* to connect to Lavalink
+
             else:
-                log.warn('Failed to connect to node {}, and max amount of try reached.'.format(self._uri))
+                log.warning('Failed to connect to node {}, and max amount of try reached.'.format(self._uri))
                 self._node.set_offline()
         else:
             self.tries = 0
@@ -84,11 +89,11 @@ class WebSocket:
                 elif op == 'stats':
                     self._node.stats._update(data)
                     await self._lavalink.dispatch_event(StatsUpdateEvent(self._node))
-            elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
+            elif msg.type in self.closers:
                 self._node.set_offline()
                 self._ws = None
                 break
-        log.warn('Node {} disconnected, reconnecting...'.format(self._uri))
+        log.warning('Node {} disconnected, reconnecting...'.format(self._uri))
         await self.connect()
 
     async def _manage_event(self, data):
@@ -107,7 +112,7 @@ class WebSocket:
         if event:
             await self._lavalink.dispatch_event(event)
 
-    async def _ws_disconnect(self, code: int, reason: str, reconnect: bool):
+    async def _ws_disconnect(self, code: int, reason: str, reconnect: bool = False):
         self._ws = None
 
         if reconnect:
