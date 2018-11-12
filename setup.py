@@ -17,8 +17,8 @@ setup(
     description='A lavalink interface built for discord.py',
     author='Devoxin',
     author_email='luke@serux.pro',
-    url='https://github.com/Devoxin/Lavalink.py',
-    download_url='https://github.com/Devoxin/Lavalink.py/archive/{}.tar.gz'.format(version),
+    url='https://github.com/Zenrac/Lavalink.py',
+    download_url='https://github.com/Zenrac/Lavalink.py/archive/{}.tar.gz'.format(version),
     keywords=['lavalink', 'zenraclink'],
     include_package_data=True,
     install_requires=['aiohttp']
