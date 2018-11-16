@@ -53,8 +53,7 @@ class WebSocket:
         }
 
         try:
-            self._ws = await self._session.ws_connect('ws://{}:{}'.format(self._host, self._port),
-                                                      heartbeat=5.0, headers=headers)
+            self._ws = await self._session.ws_connect('ws://{}:{}'.format(self._host, self._port), headers=headers)
         except aiohttp.ClientConnectorError:
             if self.tries < self.max_tries:
                 if self._first_try:  # If never connected, stop to try after 5 tries, otherwise infinite tries.
