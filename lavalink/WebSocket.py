@@ -5,7 +5,7 @@ import aiohttp
 
 from .Events import TrackStuckEvent, TrackExceptionEvent, TrackEndEvent, StatsUpdateEvent, VoiceWebSocketClosedEvent
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('launcher')
 
 
 class WebSocket:
@@ -35,7 +35,7 @@ class WebSocket:
         self.max_tries = 5
         self.tries = 0
 
-        self.closers = (aiohttp.WSMsgType.close, aiohttp.WSMsgType.closing, aiohttp.WSMsgType.closed, aiohttp.WSMsgType.error)
+        self.closers = (aiohttp.WSMsgType.close, aiohttp.WSMsgType.closing, aiohttp.WSMsgType.closed)
 
     @property
     def connected(self):
@@ -53,7 +53,8 @@ class WebSocket:
         }
 
         try:
-            self._ws = await self._session.ws_connect('ws://{}:{}'.format(self._host, self._port), headers=headers)
+            self._ws = await self._session.ws_connect('ws://{}:{}'.format(self._host, self._port),
+                                                      heartbeat=5.0, headers=headers)
         except aiohttp.ClientConnectorError:
             if self.tries < self.max_tries:
                 if self._first_try:  # If never connected, stop to try after 5 tries, otherwise infinite tries.
@@ -89,7 +90,8 @@ class WebSocket:
                     self._node.stats._update(data)
                     await self._lavalink.dispatch_event(StatsUpdateEvent(self._node))
             elif msg.type in self.closers:
-                self._node.set_offline()
+                log.warning('WS sent a closer message. {}: {}'.format(msg.type, msg))
+                self._node.set_offline()  # TODO: testing without
                 self._ws = None
                 break
         log.warning('Node {} disconnected, reconnecting...'.format(self._uri))

@@ -5,7 +5,7 @@ from .Events import NodeReadyEvent, NodeDisabledEvent
 from .Stats import Stats
 from .WebSocket import WebSocket
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('launcher')
 DISCORD_REGIONS = ('amsterdam', 'brazil', 'eu-central', 'eu-west', 'frankfurt', 'hongkong', 'japan', 'london', 'russia',
                    'singapore', 'southafrica', 'sydney', 'us-central', 'us-east', 'us-south', 'us-west',
                    'vip-amsterdam', 'vip-us-east', 'vip-us-west')
