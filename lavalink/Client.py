@@ -8,7 +8,7 @@ from .Events import TrackEndEvent, TrackExceptionEvent, TrackStuckEvent, PlayerS
 from .NodeManager import NodeManager, NoNodesAvailable
 from .PlayerManager import DefaultPlayer, PlayerManager
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('launcher')
 
 
 def set_log_level(log_level):
