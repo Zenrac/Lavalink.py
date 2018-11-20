@@ -242,7 +242,7 @@ class NodeManager:
         """
         nodes = None
         if region:
-            nodes = [n for n in self.nodes if region in n.regions and n.ws.connected]
+            nodes = [n for n in self.nodes if str(region) in n.regions and n.ws.connected]
 
         if not nodes:  # If there are no regional nodes available, or a region wasn't specified.
             nodes = [n for n in self.nodes if n.ws.connected]

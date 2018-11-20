@@ -150,9 +150,11 @@ class Client:
         if not create:
             return None
         guild = self.bot.get_guild(guild_id)
-        if guild is None:
+        if not guild:
             return self.players.get(guild_id, self.nodes.nodes[0])
-        return self.nodes.get_by_region(guild)
+        # return self.nodes.get_by_region(guild)
+        node = self.nodes.find_ideal_node(guild.region)
+        return self.players.get(guild.id, node)
 
     # Bot Events
     async def on_socket_response(self, data):
