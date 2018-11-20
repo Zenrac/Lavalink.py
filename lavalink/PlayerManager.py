@@ -40,6 +40,21 @@ class BasePlayer(ABC):
         """ This method is called when WS receives a WebSocketClosedEvent with status code 4006 """
         pass
 
+    async def change_node(self, node):
+        # raise NotImplementedError
+        self.node = node
+        if not self.node.ws.connected:
+            await self.node.ws.send(op='destroy', guildId=self.guild_id)
+
+        await self._dispatch_voice_update()
+
+        if self.current:
+            await self.node.ws.send(op='play', guildId=self.guild_id, track=self.current.track, startTime=self.position)
+
+    async def _dispatch_voice_update(self):
+        if {'sessionId', 'event'} == self._voice_state.keys():
+            await self.node._send(op='voiceUpdate', guildId=self.guild_id, **self._voice_state)
+
 
 class DefaultPlayer(BasePlayer):
     def __init__(self, node, lavalink, guild_id: int):

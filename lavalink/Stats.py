@@ -30,3 +30,25 @@ class Stats:
         self.cpu.system_load = data.get("cpu", {}).get("systemLoad", 0)
         self.cpu.lavalink_load = data.get("cpu", {}).get("lavalinkLoad", 0)
         self.uptime = data.get("uptime", 0)
+        frame_stats = data.get('frameStats', {})
+        self.frames_sent = frame_stats.get('sent', -1)
+        self.frames_nulled = frame_stats.get('nulled', -1)
+        self.frames_deficit = frame_stats.get('deficit', -1)
+        self.penalty = Penalty(self)
+
+
+class Penalty:
+    def __init__(self, stats):
+        self.player_penalty = stats.playing_players
+        self.cpu_penalty = 1.05 ** (100 * stats.cpu.system_load) * 10 - 10
+        self.null_frame_penalty = 0
+        self.deficit_frame_penalty = 0
+
+        if stats.frames_nulled is not -1:
+            self.null_frame_penalty = (1.03 ** (500 * (stats.frames_nulled / 3000))) * 300 - 300
+            self.null_frame_penalty *= 2
+
+        if stats.frames_deficit is not -1:
+            self.deficit_frame_penalty = (1.03 ** (500 * (stats.frames_deficit / 3000))) * 600 - 600
+
+        self.total = self.player_penalty + self.cpu_penalty + self.null_frame_penalty + self.deficit_frame_penalty

@@ -110,6 +110,19 @@ class LavalinkNode:
 
         self.ready = asyncio.Event(loop=self._lavalink.loop)
 
+    @property
+    def penalty(self):
+        """ Returns the load-balancing penalty for this node """
+        if not self.ws.connected or not self.stats:
+            return 9e30
+
+        return self.stats.penalty.total
+
+    @property
+    def players(self):
+        """ Returns a list of all players on this node """
+        return [p for p in self.manager._lavalink.players._players.values() if p.node == self]
+
     def set_online(self):
         self.manager.on_node_ready(self)
 
@@ -219,3 +232,36 @@ class NodeManager:
             log.info('Unknown region: {}'.format(str(guild.region)))
             node = self.nodes[0]
         return self._lavalink.players.get(guild.id, node)
+
+    def find_ideal_node(self, region: str = None):
+        """
+        Finds the best (least used) node in the given region, if applicable.
+        ----------
+        :param region:
+            The region to find a node in.
+        """
+        nodes = None
+        if region:
+            nodes = [n for n in self.nodes if region in n.regions and n.ws.connected]
+
+        if not nodes:  # If there are no regional nodes available, or a region wasn't specified.
+            nodes = [n for n in self.nodes if n.ws.connected]
+
+        if not nodes:
+            return None
+
+        best_node = min(nodes, key=lambda node: node.penalty)
+        return best_node
+
+    async def _node_disconnect(self, node):
+        # TODO: Dispatch node disconnected event, maybe have node connected event too
+        best_node = self.find_ideal_node(node.regions)
+
+        if not best_node:
+            log.error('Unable to move players, no available nodes!')
+            return
+
+        for player in node.players:
+            await player.change_node(best_node)
+
+        # TODO: On node disconnect, shift players
