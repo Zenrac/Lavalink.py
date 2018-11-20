@@ -53,7 +53,7 @@ class BasePlayer(ABC):
 
     async def _dispatch_voice_update(self):
         if {'sessionId', 'event'} == self._voice_state.keys():
-            await self.node._send(op='voiceUpdate', guildId=self.guild_id, **self._voice_state)
+            await self.node.send(op='voiceUpdate', guildId=self.guild_id, **self._voice_state)
 
 
 class DefaultPlayer(BasePlayer):
