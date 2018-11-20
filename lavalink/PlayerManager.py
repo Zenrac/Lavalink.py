@@ -46,14 +46,15 @@ class BasePlayer(ABC):
         if not self.node.ws.connected:
             await self.node.ws.send(op='destroy', guildId=self.guild_id)
 
-        await self._dispatch_voice_update()
+        if self._voice_state:
+        	await self._dispatch_voice_update()
 
-        if self.current:
+        if self.current and self.is_playing:
             await self.node.ws.send(op='play', guildId=self.guild_id, track=self.current.track, startTime=self.position)
 
     async def _dispatch_voice_update(self):
-        if {'sessionId', 'event'} == self._voice_state.keys():
-            await self.node.ws.send(op='voiceUpdate', guildId=self.guild_id, **self._voice_state)
+        if {'sessionId', 'op', 'guildId', 'event'} == self._voice_state.keys():
+            await self.node.ws.send(**self._voice_state)
 
 
 class DefaultPlayer(BasePlayer):

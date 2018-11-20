@@ -19,6 +19,10 @@ class Stats:
         self.memory = Memory()
         self.cpu = CPU()
         self.uptime = 0
+        self.frames_sent = 0
+        self.frames_nulled = 0
+        self.frames_deficit = 0
+        self.penalty = Penalty(self)
 
     def _update(self, data: dict):
         self.playing_players = data.get("playingPlayers", 0)
