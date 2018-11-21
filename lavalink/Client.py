@@ -1,5 +1,7 @@
 import asyncio
 import logging
+
+from time import time
 from urllib.parse import quote
 
 import aiohttp
@@ -116,8 +118,9 @@ class Client:
             player = self.players[guild_id]
             if not player:
                 return
-            player.position = data['state'].get('position', 0)
-            player.position_timestamp = data['state']['time']
+            player.position_timestamp = data['state'].get('time', 0)
+            player.last_position = data['state'].get('position', 0)
+            player.last_update = time() * 1000
             await self.dispatch_event(PlayerStatusUpdate(player, player.current))
 
     async def get_tracks(self, query: str):

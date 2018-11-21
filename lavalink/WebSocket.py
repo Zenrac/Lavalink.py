@@ -92,7 +92,7 @@ class WebSocket:
             elif msg.type in self.closers:
                 log.warning('WS sent a closer message. {}: {}'.format(msg.type, msg))
                 await self._ws_disconnect(msg.data, msg.extra)
-                break
+                return
         log.warning('Node {} disconnected, reconnecting...'.format(self._uri))
         await self._ws_disconnect()
 
