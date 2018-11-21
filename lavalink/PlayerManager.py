@@ -1,4 +1,6 @@
 import asyncio
+
+from time import time
 from abc import ABC, abstractmethod
 from random import randrange
 
@@ -49,7 +51,8 @@ class DefaultPlayer(BasePlayer):
         self.channel_id = None
 
         self.paused = False
-        self.position = 0
+        self.last_update = 0
+        self.last_position = 0
         self._prev_position = 0
         self.position_timestamp = 0
         self.volume = 100
@@ -60,6 +63,18 @@ class DefaultPlayer(BasePlayer):
         self.queue = []
         self.current = None
         self.previous = None
+
+    @property
+    def position(self):
+        """ Returns the position in the track, adjusted for Lavalink's 5-second stats interval. """
+        if not self.is_playing:
+            return 0
+
+        if self.paused:
+            return min(self.last_position, self.current.duration)
+
+        difference = time() * 1000 - self.last_update
+        return min(self.last_position + difference, self.current.duration)
 
     @property
     def is_playing(self):
@@ -163,7 +178,9 @@ class DefaultPlayer(BasePlayer):
         self.previous = self.current
         self._prev_position = self.position
         self.current = None
-        self.position = 0
+        self.last_update = 0
+        self.last_position = 0
+        self.position_timestamp = 0
         self.paused = False
 
         if not self.queue:
@@ -267,6 +284,33 @@ class DefaultPlayer(BasePlayer):
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
                 isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
             await self.play()
+
+    async def change_node(self, node):
+        """ Called when a node dies, allows to keep running current songs by changing node """
+        self.node = node
+        if not self.node.ws.connected:
+            await self.node.ws.send(op='destroy', guildId=self.guild_id)
+
+        if self._voice_state:
+            await self._dispatch_voice_update()
+
+        if self.current:
+            await self.node.ws.send(op='play', guildId=self.guild_id, track=self.current.track, startTime=self.position)
+            self.last_update = time() * 1000
+
+            if self.paused:
+                await self.node.ws.send(op='pause', guildId=self.guild_id, pause=self.paused)
+
+            if self.volume != 100:
+                await self.node.ws.send(op='volume', guildId=self.guild_id, volume=self.volume)
+
+            if any(self.equalizer):
+                payload = [{'band': b, 'gain': g} for b, g in enumerate(self.equalizer)]
+                await self.node.ws.send(op='equalizer', guildId=self.guild_id, bands=payload)
+
+    async def _dispatch_voice_update(self):
+        if {'sessionId', 'op', 'guildId', 'event'} == self._voice_state.keys():
+            await self.node.ws.send(**self._voice_state)
 
 
 class PlayerManager:

@@ -90,12 +90,11 @@ class WebSocket:
                     self._node.stats._update(data)
                     await self._lavalink.dispatch_event(StatsUpdateEvent(self._node))
             elif msg.type in self.closers:
-                log.warning('WS sent a closer message. {}: {}'.format(msg.type, msg))
-                self._node.set_offline()  # TODO: testing without
-                self._ws = None
-                break
+                log.warning('{0._uri} WS sent a closer message. (code {1.type} data:{1.data} extra:{1.extra})'.format(self, msg))
+                await self._ws_disconnect(msg.data, msg.extra)
+                return
         log.warning('Node {} disconnected, reconnecting...'.format(self._uri))
-        await self.connect()
+        await self._ws_disconnect()
 
     async def _manage_event(self, data):
         log.debug('Received event from node {} of type {}'.format(self._uri, data['type']))
@@ -113,10 +112,13 @@ class WebSocket:
         if event:
             await self._lavalink.dispatch_event(event)
 
-    async def _ws_disconnect(self, code: int, reason: str, reconnect: bool = False):
+    async def _ws_disconnect(self, code: int = None, reason: str = None):
+        log.warning('Disconnected from node `{}` ({}): {}'.format(self._uri, code, reason))
         self._ws = None
+        self._node.set_offline()  # TODO: testing without
 
-        if reconnect:
+        if not self._shutdown:
+            await self._node.manager._node_disconnect(self._node)
             await self.connect()
 
     async def send(self, **data):
