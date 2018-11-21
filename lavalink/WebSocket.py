@@ -90,7 +90,7 @@ class WebSocket:
                     self._node.stats._update(data)
                     await self._lavalink.dispatch_event(StatsUpdateEvent(self._node))
             elif msg.type in self.closers:
-                log.warning('WS sent a closer message. {}: {}'.format(msg.type, msg))
+                log.warning('{0._uri} WS sent a closer message. (code {1.type} data:{1.data} extra:{1.extra})'.format(self, msg))
                 await self._ws_disconnect(msg.data, msg.extra)
                 return
         log.warning('Node {} disconnected, reconnecting...'.format(self._uri))

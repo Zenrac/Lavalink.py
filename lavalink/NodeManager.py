@@ -111,6 +111,10 @@ class LavalinkNode:
         self.ready = asyncio.Event(loop=self._lavalink.loop)
 
     @property
+    def available(self):
+        return self.ws.connected
+
+    @property
     def penalty(self):
         """ Returns the load-balancing penalty for this node """
         if not self.ws.connected or not self.stats:
@@ -178,6 +182,12 @@ class NodeManager:
     def __iter__(self):
         for node in self.nodes:
             yield node
+
+    def __getitem__(self, index):
+        return self.nodes[index]
+
+    def __len__(self):
+        return len(self.nodes)
 
     def on_node_ready(self, node):
         if node not in self.offline_nodes:
