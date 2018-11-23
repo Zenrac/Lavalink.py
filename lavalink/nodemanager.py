@@ -111,12 +111,12 @@ class LavalinkNode:
 
     @property
     def available(self):
-        return self.ws.connected
+        return self.ws.connected and self not in self.manager.offline_nodes
 
     @property
     def penalty(self):
         """ Returns the load-balancing penalty for this node """
-        if not self.ws.connected or not self.stats:
+        if not self.available or not self.stats:
             return 9e30
 
         return self.stats.penalty.total
@@ -250,10 +250,10 @@ class NodeManager:
         """
         nodes = None
         if region:
-            nodes = [n for n in self.nodes if str(region) in n.regions and n.ws.connected]
+            nodes = [n for n in self.nodes if str(region) in n.regions and n.available]
 
         if not nodes:  # If there are no regional nodes available, or a region wasn't specified.
-            nodes = [n for n in self.nodes if n.ws.connected]
+            nodes = [n for n in self.nodes if n.available]
 
         if not nodes:
             return None

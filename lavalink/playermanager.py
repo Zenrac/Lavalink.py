@@ -227,10 +227,7 @@ class DefaultPlayer(BasePlayer):
 
     async def set_volume(self, vol: int):
         """ Sets the player's volume (150% or 1000% limit imposed by lavalink depending on the version). """
-        if self._lavalink._server_version <= 2:
-            self.volume = max(min(vol, 150), 0)
-        else:
-            self.volume = max(min(vol, 1000), 0)
+        self.volume = max(min(vol, 1000), 0)
         await self.node.ws.send(op='volume', guildId=self.guild_id, volume=self.volume)
 
     async def set_gain(self, band: int, gain: float = 0.0):
@@ -278,7 +275,7 @@ class DefaultPlayer(BasePlayer):
     async def change_node(self, node):
         """ Called when a node dies, allows to keep running current songs by changing node """
         self.node = node
-        if not self.node.ws.connected:
+        if not self.node.available:
             await self.node.ws.send(op='destroy', guildId=self.guild_id)
 
         if self._voice_state:
