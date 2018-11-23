@@ -16,7 +16,6 @@ class WebSocket:
         self._session = aiohttp.ClientSession()
         self._ws = None
         self._queue = []
-        self._ws_retry = ws_retry
 
         self._password = password
         self._host = host
@@ -31,7 +30,7 @@ class WebSocket:
         self._loop = self._lavalink.loop
         asyncio.ensure_future(self.start())
 
-        self.max_tries = 10
+        self.max_tries = ws_retry
         self.tries = 0
 
         self.closers = (aiohttp.WSMsgType.close, aiohttp.WSMsgType.closing, aiohttp.WSMsgType.closed)
