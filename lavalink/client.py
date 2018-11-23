@@ -94,7 +94,8 @@ class Client:
 
     async def dispatch_event(self, event):
         """ Dispatches an event to all registered hooks. """
-        log.debug('Dispatching event of type {} to {} hooks'.format(event.__class__.__name__, len(self.hooks)))
+        if not isinstance(event, PlayerStatusUpdate):  # Because this shit pops too often
+            log.debug('Dispatching event of type {} to {} hooks'.format(event.__class__.__name__, len(self.hooks)))
         for hook in self.hooks:
             try:
                 if asyncio.iscoroutinefunction(hook):
