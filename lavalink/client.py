@@ -50,7 +50,6 @@ class Client:
 
         set_log_level(log_level)
 
-        self.log = log  # Easier for users to get lavalink's logger and customize it.
         self.bot = bot
         self.bot.add_listener(self.on_socket_response)
 
