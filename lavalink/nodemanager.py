@@ -1,11 +1,12 @@
 import asyncio
 import logging
 
-from .Events import NodeReadyEvent, NodeDisabledEvent
-from .Stats import Stats
-from .WebSocket import WebSocket
+from .events import NodeReadyEvent, NodeDisabledEvent
+from .stats import Stats
+from .websockets import WebSocket
 
-log = logging.getLogger('launcher')
+log = logging.getLogger('lavalink')
+
 DISCORD_REGIONS = ('amsterdam', 'brazil', 'eu-central', 'eu-west', 'frankfurt', 'hongkong', 'japan', 'london', 'russia',
                    'singapore', 'southafrica', 'sydney', 'us-central', 'us-east', 'us-south', 'us-west',
                    'vip-amsterdam', 'vip-us-east', 'vip-us-west')
@@ -29,6 +30,9 @@ class Regions:
     def __iter__(self):
         for r in self.regions:
             yield r
+
+    def __getitem__(self, index):
+        return self.regions[index]
 
     @classmethod
     def all(cls):
@@ -94,30 +98,29 @@ class Regions:
 
 
 class LavalinkNode:
-    def __init__(self, manager, host, password, regions, port: int = 2333,
-                 ws_retry: int = 10, shard_count: int = 1):
+    def __init__(self, manager, name, host, password, regions, port: int = 2333,
+                 ws_retry: int = 10):
         self.regions = regions
+        self.name = name or host
         self._lavalink = manager._lavalink
         self.manager = manager
         self.rest_uri = 'http://{}:{}/loadtracks?identifier='.format(host, port)
         self.password = password
-
         self.ws = WebSocket(
-            manager._lavalink, self, host, password, port, ws_retry, shard_count
+            manager._lavalink, self, host, password, port, ws_retry
         )
-        self.server_version = 2
         self.stats = Stats()
 
         self.ready = asyncio.Event(loop=self._lavalink.loop)
 
     @property
     def available(self):
-        return self.ws.connected
+        return self.ws.connected and self not in self.manager.offline_nodes
 
     @property
     def penalty(self):
         """ Returns the load-balancing penalty for this node """
-        if not self.ws.connected or not self.stats:
+        if not self.available or not self.stats:
             return 9e30
 
         return self.stats.penalty.total
@@ -146,8 +149,7 @@ class LavalinkNode:
         current_position = int(player.position)
         await player.play()
         await player.seek(current_position)
-        if player.node.server_version == 3 and player.node.ws._is_v31:
-            await player.set_gains(*[(x, y) for x, y in enumerate(player.equalizer)])
+        await player.set_gains(*[(x, y) for x, y in enumerate(player.equalizer)])
 
     async def manage_failover(self):
         if self.manager.nodes:
@@ -219,15 +221,15 @@ class NodeManager:
         self._lavalink.loop.create_task(self._lavalink.dispatch_event(NodeDisabledEvent(node)))
 
     def add(self, regions: Regions, host: str = 'localhost', port: int = 2333,
-            password: str = 'youshallnotpass', ws_retry: int = 10, shard_count: int = 1):
-        node = LavalinkNode(self, host, password, regions, port, ws_retry, shard_count)
+            password: str = 'youshallnotpass', ws_retry: int = 10, name: str = None):
+        node = LavalinkNode(self, name, host, password, regions, port, ws_retry)
         self.offline_nodes.append(node)
 
     def get_rest(self):
         if not self.nodes:
             raise NoNodesAvailable
         node = self.nodes[self.default_node_index] if self.default_node_index < len(self.nodes) else None
-        if node is None and self.round_robin is False:
+        if not node and not self.round_robin:
             node = self.nodes[0]
         if self.round_robin:
             node = self.nodes[min(self._rr_pos, len(self.nodes) - 1)]
@@ -252,10 +254,10 @@ class NodeManager:
         """
         nodes = None
         if region:
-            nodes = [n for n in self.nodes if str(region) in n.regions and n.ws.connected]
+            nodes = [n for n in self.nodes if str(region) in n.regions and n.available]
 
         if not nodes:  # If there are no regional nodes available, or a region wasn't specified.
-            nodes = [n for n in self.nodes if n.ws.connected]
+            nodes = [n for n in self.nodes if n.available]
 
         if not nodes:
             return None
@@ -264,7 +266,6 @@ class NodeManager:
         return best_node
 
     async def _node_disconnect(self, node):
-        # TODO: Dispatch node disconnected event, maybe have node connected event too
         best_node = self.find_ideal_node(node.regions)
 
         if not best_node:
@@ -273,5 +274,3 @@ class NodeManager:
 
         for player in node.players:
             await player.change_node(best_node)
-
-        # TODO: On node disconnect, shift players

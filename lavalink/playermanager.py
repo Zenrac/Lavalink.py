@@ -4,15 +4,11 @@ from time import time
 from abc import ABC, abstractmethod
 from random import randrange
 
-from .AudioTrack import AudioTrack
-from .Events import QueueEndEvent, TrackExceptionEvent, TrackEndEvent, TrackStartEvent, TrackStuckEvent
+from .audiotrack import AudioTrack
+from .events import QueueEndEvent, TrackExceptionEvent, TrackEndEvent, TrackStartEvent, TrackStuckEvent
 
 
 class NoPreviousTrack(Exception):
-    pass
-
-
-class UnsupportedLavalinkVersion(Exception):
     pass
 
 
@@ -231,26 +227,19 @@ class DefaultPlayer(BasePlayer):
 
     async def set_volume(self, vol: int):
         """ Sets the player's volume (150% or 1000% limit imposed by lavalink depending on the version). """
-        if self._lavalink._server_version <= 2:
-            self.volume = max(min(vol, 150), 0)
-        else:
-            self.volume = max(min(vol, 1000), 0)
+        self.volume = max(min(vol, 1000), 0)
         await self.node.ws.send(op='volume', guildId=self.guild_id, volume=self.volume)
 
     async def set_gain(self, band: int, gain: float = 0.0):
-        """ (Only Lavalink v3.1 or higher) Sets the equalizer band (0-15) gain to the given amount.
+        """ Sets the equalizer band (0-15) gain to the given amount.
         A gain of 0.0 indicates no change. Gain cannot go below -0.25, or exceed 1.0 """
-        if not self.node.server_version == 3 and not self.node.ws._is_v31:
-            raise UnsupportedLavalinkVersion('Lavalink version must be at least 3.1')
         gain = max(min(gain, 1.0), -0.25)
         band = max(min(band, 15), 0)
         self.equalizer[band] = gain
         await self.node.ws.send(op='equalizer', guildId=self.guild_id, bands=[{'band': band, 'gain': gain}])
 
     async def set_gains(self, *gain_list):
-        """ (Only Lavalink v3.1 or higher) Sets equalizer to the specified values in the list. Must have 15 values. """
-        if not self.node.server_version == 3 and not self.node.ws._is_v31:
-            raise UnsupportedLavalinkVersion('Lavalink version must be at least 3.1')
+        """ Sets equalizer to the specified values in the list. Must have 15 values. """
         update_package = []
         for value in gain_list:
             if isinstance(value, tuple):
@@ -270,9 +259,7 @@ class DefaultPlayer(BasePlayer):
         await self.node.ws.send(op='equalizer', guildId=self.guild_id, bands=update_package)
 
     async def reset_equalizer(self):
-        """ (Only Lavalink v3.1 or higher) Resets equalizer to default values. """
-        if not self.node.server_version == 3 and not self.node.ws._is_v31:
-            raise UnsupportedLavalinkVersion('Lavalink version must be at least 3.1')
+        """ Resets equalizer to default values. """
         await self.set_gains(*[(x, 0.0) for x in range(15)])
 
     async def seek(self, pos: int):
@@ -288,7 +275,7 @@ class DefaultPlayer(BasePlayer):
     async def change_node(self, node):
         """ Called when a node dies, allows to keep running current songs by changing node """
         self.node = node
-        if not self.node.ws.connected:
+        if not self.node.available:
             await self.node.ws.send(op='destroy', guildId=self.guild_id)
 
         if self._voice_state:
