@@ -10,17 +10,16 @@ from .events import TrackEndEvent, TrackExceptionEvent, TrackStuckEvent, PlayerS
 from .nodemanager import NodeManager, NoNodesAvailable
 from .playermanager import DefaultPlayer, PlayerManager
 
-log = logging.getLogger('launcher')
-
+log = logging.getLogger('lavalink')
 
 def set_log_level(log_level):
-    root_log = logging.getLogger(__name__.split('.')[0])
-    root_log.setLevel(log_level)
+    root_log = logging.getLogger('lavalink')
+    root_log.handlers[0].setLevel(log_level)
 
 
 class Client:
     def __init__(self, bot, log_level=logging.INFO, loop=asyncio.get_event_loop(), default_node: int = 0,
-                 player=DefaultPlayer, rest_round_robin: bool = False):
+                 player=DefaultPlayer, rest_round_robin: bool = False, user_id: int = None, shard_count: int = 1):
         """
         Creates a new Lavalink client.
         -----------------
@@ -37,19 +36,30 @@ class Client:
             Do not change this unless you know what you are doing!
         :param rest_round_robin:
             Whether nodes should be cycled for REST requests to spread load.
+        :param user_id:
+            The user ID that will be used for lavalink.
+            Defaults to automatically detect bot user ID.
+        :param shard_count:
+            The shard count that will be used for lavalink.
+            Defaults to automatically detect bot shard count.
         """
-
         bot.lavalink = self
+
         self.http = aiohttp.ClientSession(loop=loop)
         self.hooks = []
 
         set_log_level(log_level)
 
+        self.log = log  # Easier for users to get lavalink's logger and customize it.
         self.bot = bot
         self.bot.add_listener(self.on_socket_response)
 
+        self.shard_count = shard_count
+        self.user_id = user_id
+
         self.loop = loop
         self.new_loop = asyncio.new_event_loop()
+
         self.nodes = NodeManager(self, default_node, rest_round_robin, player)
         self.players = PlayerManager(self, player)
 

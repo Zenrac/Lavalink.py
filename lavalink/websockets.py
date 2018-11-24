@@ -5,11 +5,11 @@ import aiohttp
 
 from .events import TrackStuckEvent, TrackExceptionEvent, TrackEndEvent, StatsUpdateEvent, VoiceWebSocketClosedEvent
 
-log = logging.getLogger('launcher')
+log = logging.getLogger('lavalink')
 
 
 class WebSocket:
-    def __init__(self, lavalink, node, host, password, port, ws_retry, shard_count):
+    def __init__(self, lavalink, node, host, password, port, ws_retry):
         self._lavalink = lavalink
         self._node = node
 
@@ -20,20 +20,24 @@ class WebSocket:
         self._password = password
         self._host = host
         self._port = port
+        self._user_id = lavalink.user_id
 
-        self._uri = 'ws://{}:{}'.format(self._host, self._port)
-        self._shards = shard_count
+        self._shards = self._lavalink.shard_count
 
         self._shutdown = False
         self._first_try = True
 
         self._loop = self._lavalink.loop
-        asyncio.ensure_future(self.start())
 
         self.max_tries = ws_retry
         self.tries = 0
 
         self.closers = (aiohttp.WSMsgType.close, aiohttp.WSMsgType.closing, aiohttp.WSMsgType.closed)
+
+        if not self._user_id:
+            asyncio.ensure_future(self.start())
+        else:
+            asyncio.ensure_future(self.connect())
 
     @property
     def connected(self):
@@ -43,15 +47,15 @@ class WebSocket:
     async def start(self):
         """ Only to wait the first time """
         await self._lavalink.bot.wait_until_ready()
+        self._user_id = self._lavalink.bot.user.id
         await self.connect()
 
     async def connect(self):
         """ Attempts to establish a connection to Lavalink. """
-
         headers = {
             'Authorization': str(self._password),
             'Num-Shards': str(self._shards),
-            'User-Id': str(self._lavalink.bot.user.id)
+            'User-Id': str(self._user_id)
         }
 
         while not self.connected:
@@ -61,11 +65,11 @@ class WebSocket:
                 self.tries += 1
                 if (self.tries <= self.max_tries) or not self._first_try:
                     backoff = min(10 * self.tries, 60)
-                    log.warning('Failed to connect to node {}, retrying in {}s...'.format(self._uri, backoff))
+                    log.warning('Failed to connect to node {}, retrying in {}s...'.format(self._node.name, backoff))
                     await asyncio.sleep(backoff)
 
                 else:
-                    log.warning('Failed to connect to node {}, and max amount of try reached.'.format(self._uri))
+                    log.warning('Failed to connect to node {}, and max amount of try reached.'.format(self._node.name))
                     break
             else:
                 self.tries = 0
@@ -88,14 +92,13 @@ class WebSocket:
                     self._node.stats._update(data)
                     await self._lavalink.dispatch_event(StatsUpdateEvent(self._node))
             elif msg.type in self.closers:
-                log.warning('{0._uri} WS sent a closer message. (code {1.type} data:{1.data} extra:{1.extra})'.format(self, msg))
                 await self._ws_disconnect(msg.data, msg.extra)
                 return
-        log.warning('Node {} disconnected, reconnecting...'.format(self._uri))
+        log.warning('Node {} disconnected, reconnecting...'.format(self._node.name))
         await self._ws_disconnect()
 
     async def _manage_event(self, data):
-        log.debug('Received event from node {} of type {}'.format(self._uri, data['type']))
+        log.debug('Received event from node {} of type {}'.format(self._node.name, data['type']))
         player = self._lavalink.players[int(data['guildId'])]
         event = None
 
@@ -113,7 +116,7 @@ class WebSocket:
             await self._lavalink.dispatch_event(event)
 
     async def _ws_disconnect(self, code: int = None, reason: str = None):
-        log.warning('Disconnected from node `{}` ({}): {}'.format(self._uri, code, reason))
+        log.warning('Disconnected from node `{}` ({}): {}'.format(self._node.name, code, reason))
         self._ws = None
         self._node.set_offline()
 
@@ -126,7 +129,7 @@ class WebSocket:
             log.debug('Sending payload {}'.format(str(data)))
             await self._ws.send_json(data)
         else:
-            log.debug('Send called before node {} ready, payload queued: {}'.format(self._uri, str(data)))
+            log.debug('Send called before node {} ready, payload queued: {}'.format(self._node.name, str(data)))
             self._queue.append(data)
 
     def destroy(self):

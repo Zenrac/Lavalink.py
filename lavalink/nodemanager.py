@@ -5,7 +5,8 @@ from .events import NodeReadyEvent, NodeDisabledEvent
 from .stats import Stats
 from .websockets import WebSocket
 
-log = logging.getLogger('launcher')
+log = logging.getLogger('lavalink')
+
 DISCORD_REGIONS = ('amsterdam', 'brazil', 'eu-central', 'eu-west', 'frankfurt', 'hongkong', 'japan', 'london', 'russia',
                    'singapore', 'southafrica', 'sydney', 'us-central', 'us-east', 'us-south', 'us-west',
                    'vip-amsterdam', 'vip-us-east', 'vip-us-west')
@@ -29,6 +30,9 @@ class Regions:
     def __iter__(self):
         for r in self.regions:
             yield r
+
+    def __getitem__(self, index):
+        return self.regions[index]
 
     @classmethod
     def all(cls):
@@ -94,16 +98,16 @@ class Regions:
 
 
 class LavalinkNode:
-    def __init__(self, manager, host, password, regions, port: int = 2333,
-                 ws_retry: int = 10, shard_count: int = 1):
+    def __init__(self, manager, name, host, password, regions, port: int = 2333,
+                 ws_retry: int = 10):
         self.regions = regions
+        self.name = name or host
         self._lavalink = manager._lavalink
         self.manager = manager
         self.rest_uri = 'http://{}:{}/loadtracks?identifier='.format(host, port)
         self.password = password
-
         self.ws = WebSocket(
-            manager._lavalink, self, host, password, port, ws_retry, shard_count
+            manager._lavalink, self, host, password, port, ws_retry
         )
         self.stats = Stats()
 
@@ -217,8 +221,8 @@ class NodeManager:
         self._lavalink.loop.create_task(self._lavalink.dispatch_event(NodeDisabledEvent(node)))
 
     def add(self, regions: Regions, host: str = 'localhost', port: int = 2333,
-            password: str = 'youshallnotpass', ws_retry: int = 10, shard_count: int = 1):
-        node = LavalinkNode(self, host, password, regions, port, ws_retry, shard_count)
+            password: str = 'youshallnotpass', ws_retry: int = 10, name: str = None):
+        node = LavalinkNode(self, name, host, password, regions, port, ws_retry)
         self.offline_nodes.append(node)
 
     def get_rest(self):

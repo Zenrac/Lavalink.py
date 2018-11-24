@@ -18,7 +18,7 @@ from . import utils
 from .nodemanager import Regions
 
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('lavalink')
 
 fmt = logging.Formatter(
     '[%(asctime)s] [lavalink.py] [%(levelname)s] %(message)s',
@@ -29,4 +29,4 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(fmt)
 log.addHandler(handler)
 
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
