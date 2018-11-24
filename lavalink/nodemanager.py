@@ -196,7 +196,7 @@ class NodeManager:
             return
         node_index = self.offline_nodes.index(node)
         self.nodes.append(self.offline_nodes.pop(node_index))
-        log.info("Node {} is ready for use.".format(self.nodes.index(node)))
+        log.info("Node {} is ready for use.".format(node.name))
         node.ready.set()
         self.ready.set()
         for region in node.regions:
