@@ -1,18 +1,19 @@
 import logging
 from .node import Node
+from .events import NodeConnectedEvent, NodeDisconnectedEvent
 
 log = logging.getLogger('lavalink')
 
 
 class NodeManager:
-    def __init__(self, lavalink):
+    def __init__(self, lavalink, regions: dict):
         self._lavalink = lavalink
         self.nodes = []
 
-        self.regions = {
+        self.regions = regions or {
             'asia': ('hongkong', 'singapore', 'sydney', 'japan', 'southafrica'),
-            'eu': ('eu', 'amsterdam', 'frankfurt', 'russia', 'vip-amsterdam', 'london'),
-            'us': ('us', 'brazil', 'vip-us')
+            'eu': ('eu', 'amsterdam', 'frankfurt', 'russia', 'london'),
+            'us': ('us', 'brazil')
         }
 
     def __iter__(self):
@@ -54,10 +55,12 @@ class NodeManager:
         if not endpoint:
             return None
 
-        for key in self.regions:
-            nodes = [n for n in self.nodes if n.region == key]
+        endpoint = endpoint.replace('vip-', '')
 
-            if not nodes or not any(n.available for n in nodes):
+        for key in self.regions:
+            nodes = [n for n in self.available_nodes if n.region == key]
+
+            if not nodes:
                 continue
 
             if endpoint.startswith(self.regions[key]):
@@ -87,11 +90,11 @@ class NodeManager:
 
     async def _node_connect(self, node: Node):
         log.info('Successfully connected to node `{}`'.format(node.name))
-        # TODO: Dispatch node connected event
+        await self._lavalink._dispatch_event(NodeConnectedEvent(node))
 
     async def _node_disconnect(self, node: Node, code: int, reason: str):
         log.warning('Disconnected from node `{}` ({}): {}'.format(node.name, code, reason))
-        # TODO: Dispatch node disconnected event
+        await self._lavalink._dispatch_event(NodeDisconnectedEvent(node, code, reason))
 
         best_node = self.find_ideal_node(node.region)
 
