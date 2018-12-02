@@ -50,7 +50,7 @@ class WebSocket:
 
             try:
                 self._ws = await self._session.ws_connect('ws://{}:{}'.format(self._host, self._port), headers=headers)
-            except aiohttp.ClientConnectorError:
+            except aiohttp.ClientError:
                 if attempt == 1:
                     log.warning('Failed to connect to node `{}`!'.format(self._node.name))
 
@@ -97,7 +97,6 @@ class WebSocket:
         player = self._lavalink.players.get(int(data['guildId']))
 
         if not player:
-            log.info('Received event for non-existent player! Node: `{}`, GuildId: {}'.format(self._node.name, data['guildId']))
             return
 
         event_type = data['type']
