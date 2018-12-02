@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from random import randrange
 from time import time
-from .events import TrackStartEvent, TrackStuckEvent, TrackExceptionEvent, TrackEndEvent, QueueEndEvent  # noqa: F401
+from .events import TrackStartEvent, TrackStuckEvent, TrackExceptionEvent, TrackEndEvent, QueueEndEvent, PlayerUpdateEvent  # noqa: F401
 from .node import Node
 
 
@@ -64,7 +64,7 @@ class BasePlayer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def update_state(self, state: dict):
+    async def update_state(self, state: dict):
         raise NotImplementedError
 
     def cleanup(self):
@@ -83,6 +83,11 @@ class BasePlayer(ABC):
         })
 
         self.channel_id = data['channel_id']
+
+        if not self.channel_id:  # We're disconnecting
+            self._voice_state.clear()
+            return
+
         await self._dispatch_voice_update()
 
     async def _dispatch_voice_update(self):
@@ -324,10 +329,13 @@ class DefaultPlayer(BasePlayer):
                 isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
             await self.play()
 
-    def update_state(self, state: dict):
+    async def update_state(self, state: dict):
         self.last_update = time() * 1000
         self.last_position = state.get('position', 0)
         self.position_timestamp = state.get('time', 0)
+
+        event = PlayerUpdateEvent(self, self.last_position, self.position_timestamp)
+        await self.node._dispatch_event(event)
 
     async def change_node(self, node: Node):
         if self.node.available:
