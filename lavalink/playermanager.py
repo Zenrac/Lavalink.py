@@ -17,7 +17,7 @@ class PlayerManager:
 
     def __len__(self):
         return len(self.players)
-    
+
     async def destroy(self, guild_id: int):
         """
         Removes a player from cache, and also Lavalink if applicable.
@@ -66,7 +66,7 @@ class PlayerManager:
         """
         return self.players.get(guild_id)
 
-    def create(self, guild_id: int, region: str = 'eu', endpoint: str = None, node: Node = None, create: bool = True):
+    def create(self, guild_id: int, region: str = 'eu', endpoint: str = None, node: Node = None):
         """
         Creates a player if one doesn't exist with the given information.
 
@@ -89,9 +89,6 @@ class PlayerManager:
         """
         if guild_id in self.players:
             return self.players[guild_id]
-
-        if not create:
-            return None
 
         if node:
             return node
