@@ -62,8 +62,6 @@ class WebSocket:
 
     async def _listen(self):
         async for msg in self._ws:
-            log.debug('Received websocket message from node `{}`: {}'.format(self._node.name, msg.data))
-
             if msg.type == aiohttp.WSMsgType.text:
                 await self._handle_message(msg.json())
             elif msg.type in self._closers:
@@ -90,6 +88,7 @@ class WebSocket:
             await player.update_state(data['state'])
         elif op == 'event':
             await self._handle_event(data)
+            log.debug('Received websocket event from node `{}`: {}'.format(self._node.name, data))
         else:
             log.warning('Received unknown op: {}'.format(op))
 
