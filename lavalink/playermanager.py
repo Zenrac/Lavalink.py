@@ -10,9 +10,6 @@ class PlayerManager:
         self.players = {}
         self.default_player = player
 
-    def __len__(self):
-        return len(self.players)
-
     def __iter__(self):
         """ Returns an iterator that yields a tuple of (guild_id, player). """
         for guild_id, player in self.players.items():
@@ -26,8 +23,10 @@ class PlayerManager:
         Removes a player from cache, and also Lavalink if applicable.
         Ensure you have disconnected the given guild_id from the voicechannel
         first, if connected.
+
         ONLY USE THIS IF YOU KNOW WHAT YOU'RE DOING!
         Usage of this function may lead to invalid cache states!
+
         ----------
         :param guild_id:
             The guild_id associated with the player to remove.
@@ -38,7 +37,7 @@ class PlayerManager:
         player = self.players.pop(guild_id)
 
         if player.node and player.node.available:
-            await player.node._send(op='destroy', guildId=player.guild_id)    
+            await player.node._send(op='destroy', guildId=player.guild_id)
 
     def values(self):
         """ Returns an iterator that yields only values """
