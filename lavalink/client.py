@@ -15,6 +15,11 @@ from .events import Event
 log = logging.getLogger('lavalink')
 
 
+def set_log_level(log_level):
+    root_log = logging.getLogger('lavalink')
+    root_log.handlers[0].setLevel(log_level)
+
+
 class Client:
     """
     Represents a Lavalink client used to manage nodes and connections.
@@ -42,12 +47,18 @@ class Client:
     """
 
     def __init__(self, user_id: int, shard_count: int = 1, pool_size: int = 100, loop=None, player=DefaultPlayer,
-                 regions: dict = None):
+                 bot=None, log_level=logging.INFO, regions: dict = None):
+
+        set_log_level(log_level)
+
         self._user_id = str(user_id)
         self._shard_count = str(shard_count)
         self._loop = loop or asyncio.get_event_loop()
         self.node_manager = NodeManager(self, regions)
         self.players = PlayerManager(self, player)
+        self.bot = bot
+        if bot:
+            self.bot.lavalink = self
 
         self._event_hooks = []
 
@@ -59,7 +70,7 @@ class Client:
         if hook not in self._event_hooks:
             self._event_hooks.append(hook)
 
-    def add_node(self, host: str, port: int, password: str, region: str, name: str = None):
+    def add_node(self, host: str, password: str, region: str, port: int=2333, name: str = None):
         """
         Adds a node to Lavalink's node manager.
         ----------
