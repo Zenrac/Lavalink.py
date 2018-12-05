@@ -241,12 +241,18 @@ class DefaultPlayer(BasePlayer):
 
     async def connect(self, channel_id: int):
         """ Connects to a voice channel. """
-        ws = self.node._manager._lavalink.bot._connection._get_websocket(int(self.guild_id))
+        bot = self.node._manager._lavalink.bot
+        if not bot:
+            raise ValueError('Bot parameter is required to use this function.')
+        ws = bot._connection._get_websocket(int(self.guild_id))
         await ws.voice_state(self.guild_id, str(channel_id))
 
     async def disconnect(self):
+        bot = self.node._manager._lavalink.bot
+        if not bot:
+            raise ValueError('Bot parameter is required to use this function.')
         await self.stop()
-        ws = self.node._manager._lavalink.bot._connection._get_websocket(int(self.guild_id))
+        ws = bot._connection._get_websocket(int(self.guild_id))
         await ws.voice_state(self.guild_id, None)
 
     async def skip(self):
