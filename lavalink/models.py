@@ -85,6 +85,10 @@ class BasePlayer(ABC):
 
         self.channel_id = data['channel_id']
 
+        if not self.channel_id:  # We're disconnecting	
+            self._voice_state.clear()	
+            return	
+
         await self._dispatch_voice_update()
 
     async def _dispatch_voice_update(self):
