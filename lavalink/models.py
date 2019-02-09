@@ -18,7 +18,7 @@ class TrackNotBuilt(Exception):
 
 class AudioTrack:
     __slots__ = ('track', 'identifier', 'is_seekable', 'author', 'duration', 'stream', 'title', 'uri', 'requester',
-                 'preferences')
+                 'preferences', 'artwork')
 
     def __init__(self, requester, **kwargs):
         self.requester = requester
@@ -37,6 +37,7 @@ class AudioTrack:
             new_track.stream = track['info']['isStream']
             new_track.title = track['info']['title']
             new_track.uri = track['info']['uri']
+            new_track.artwork = track['info'].get('artwork', '')
 
             return new_track
         except KeyError:
@@ -84,9 +85,9 @@ class BasePlayer(ABC):
 
         self.channel_id = data['channel_id']
 
-        if not self.channel_id:  # We're disconnecting
-            self._voice_state.clear()
-            return
+        if not self.channel_id:  # We're disconnecting	
+            self._voice_state.clear()	
+            return	
 
         await self._dispatch_voice_update()
 
@@ -138,6 +139,16 @@ class DefaultPlayer(BasePlayer):
 
         difference = time() * 1000 - self.last_update
         return min(self.last_position + difference, self.current.duration)
+
+    @property
+    def connected_channel(self):
+        """ Returns the voice channel the player is connected to. """
+        if not self.channel_id:
+            return None
+        bot = self.node._manager._lavalink.bot
+        if not bot:
+            return None
+        return bot.get_channel(int(self.channel_id))
 
     def store(self, key: object, value: object):
         """
@@ -230,6 +241,22 @@ class DefaultPlayer(BasePlayer):
         await self.node._send(op='stop', guildId=self.guild_id)
         await self.reset_equalizer()
         self.current = None
+
+    async def connect(self, channel_id: int):
+        """ Connects to a voice channel. """
+        bot = self.node._manager._lavalink.bot
+        if not bot:
+            raise ValueError('Bot parameter is required to use this function.')
+        ws = bot._connection._get_websocket(int(self.guild_id))
+        await ws.voice_state(self.guild_id, str(channel_id))
+
+    async def disconnect(self):
+        bot = self.node._manager._lavalink.bot
+        if not bot:
+            raise ValueError('Bot parameter is required to use this function.')
+        await self.stop()
+        ws = bot._connection._get_websocket(int(self.guild_id))
+        await ws.voice_state(self.guild_id, None)
 
     async def skip(self):
         """ Plays the next track in the queue, if any. """

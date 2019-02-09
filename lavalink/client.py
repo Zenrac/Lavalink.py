@@ -42,12 +42,16 @@ class Client:
     """
 
     def __init__(self, user_id: int, shard_count: int = 1, pool_size: int = 100, loop=None, player=DefaultPlayer,
-                 regions: dict = None):
+                 bot=None, regions: dict = None):
+
         self._user_id = str(user_id)
         self._shard_count = str(shard_count)
         self._loop = loop or asyncio.get_event_loop()
         self.node_manager = NodeManager(self, regions)
         self.players = PlayerManager(self, player)
+        self.bot = bot
+        if bot:
+            self.bot.lavalink = self
 
         self._event_hooks = []
 
@@ -60,7 +64,7 @@ class Client:
         if hook not in self._event_hooks:
             self._event_hooks.append(hook)
 
-    def add_node(self, host: str, port: int, password: str, region: str,
+    def add_node(self, host: str, password: str, region: str, port: int=2333, 
                  resume_key: str = None, resume_timeout: int = 60, name: str = None):
         """
         Adds a node to Lavalink's node manager.
