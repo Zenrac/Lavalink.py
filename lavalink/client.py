@@ -56,14 +56,16 @@ class Client:
         self._event_hooks = []
 
         self._session = aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(limit=pool_size, loop=loop)
-        )  # This session will be used for websocket and http requests
+            connector=aiohttp.TCPConnector(limit=pool_size, loop=loop),
+            timeout=aiohttp.ClientTimeout(total=30)
+        )  # This session will be used for websocket and http requests.
 
     def add_event_hook(self, hook):
         if hook not in self._event_hooks:
             self._event_hooks.append(hook)
 
-    def add_node(self, host: str, password: str, region: str, port: int=2333, name: str = None):
+    def add_node(self, host: str, password: str, region: str, port: int=2333, 
+                 resume_key: str = None, resume_timeout: int = 60, name: str = None):
         """
         Adds a node to Lavalink's node manager.
         ----------
@@ -75,13 +77,18 @@ class Client:
             The password used for authentication.
         :param region:
             The region to assign this node to.
+        :param resume_key:
+            A resume key used for resuming a session upon re-establishing a WebSocket connection to Lavalink.
+        :param resume_timeout:
+            How long the node should wait for a connection while disconnected before clearing all players.
         :param name:
             An identifier for the node that will show in logs.
         """
-        self.node_manager.add_node(host, port, password, region, name)
+        self.node_manager.add_node(host, port, password, region, name, resume_key, resume_timeout)
 
     async def get_tracks(self, query: str, node: Node = None):
-        """
+        """|coro|
+
         Gets all tracks associated with the given query.
         -----------------
         :param query:
@@ -100,6 +107,62 @@ class Client:
                 return await res.json()
 
             return []
+
+    async def decode_track(self, track: str, node: Node = None):
+        """|coro|
+
+        Decodes a base64-encoded track string into a dict.
+
+        Parameters
+        ----------
+        track: str
+            The base64-encoded `track` string.
+        node: Node
+            The node to use for the query. ``None`` means random.
+
+        Returns
+        ---------
+        A dict representing the track's information.
+        """
+        node = node or random.choice(self.node_manager.available_nodes)
+        destination = 'http://{}:{}/decodetrack?track={}'.format(node.host, node.port, track)
+        headers = {
+            'Authorization': node.password
+        }
+
+        async with self._session.get(destination, headers=headers) as res:
+            if res.status == 200:
+                return await res.json()
+
+            return None
+
+    async def decode_tracks(self, tracks: list, node: Node = None):
+        """|coro|
+
+        Decodes a list of base64-encoded track strings into a dict.
+
+        Parameters
+        ----------
+        track: list[str]
+            A list of base64-encoded `track` strings.
+        node: Node
+            The node to use for the query. ``None`` means random.
+
+        Returns
+        ---------
+        An array of dicts representing track information.
+        """
+        node = node or random.choice(self.node_manager.available_nodes)
+        destination = 'http://{}:{}/decodetracks'.format(node.host, node.port)
+        headers = {
+            'Authorization': node.password
+        }
+
+        async with self._session.post(destination, headers=headers, json=tracks) as res:
+            if res.status == 200:
+                return await res.json()
+
+            return None
 
     async def voice_update_handler(self, data):
         """|coro|
@@ -137,7 +200,8 @@ class Client:
             return
 
     async def _dispatch_event(self, event: Event):
-        """
+        """|coro|
+
         Dispatches the given event to all registered hooks
         ----------
         :param event:

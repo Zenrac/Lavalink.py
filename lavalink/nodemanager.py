@@ -27,13 +27,14 @@ class NodeManager:
         """
         return [n for n in self.nodes if n.available]
 
-    def add_node(self, host: str, port: int, password: str, region: str, name: str = None):
+    def add_node(self, host: str, port: int, password: str, region: str, name: str = None,
+                 resume_key: str = None, resume_timeout: int = 60):
         """
         Adds a node
         ----------
         TODO
         """
-        node = Node(self, host, port, password, region, name)
+        node = Node(self, host, port, password, region, name, resume_key, resume_timeout)
         self.nodes.append(node)
 
     def remove_node(self, node: Node):
@@ -89,11 +90,11 @@ class NodeManager:
         return best_node
 
     async def _node_connect(self, node: Node):
-        log.info('Successfully connected to node `{}`'.format(node.name))
+        log.info('[NODE-{}] Successfully established connection'.format(node.name))
         await self._lavalink._dispatch_event(NodeConnectedEvent(node))
 
     async def _node_disconnect(self, node: Node, code: int, reason: str):
-        log.warning('Disconnected from node `{}` ({}): {}'.format(node.name, code, reason))
+        log.warning('[NODE-{}] Disconnected with code {} and reason {}'.format(node.name, code, reason))
         await self._lavalink._dispatch_event(NodeDisconnectedEvent(node, code, reason))
 
         best_node = self.find_ideal_node(node.region)
