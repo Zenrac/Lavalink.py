@@ -2,24 +2,28 @@
 
 # Lavalink.py
 
-Lavalink.py serves to be an interface with various utilities to make interacting with Lavalink easier!
+Lavalink.py is a wrapper for [Lavalink](https://github.com/Frederikam/Lavalink) which abstracts away most of the code necessary to use Lavalink to allow for easier integration into your bots, while still promising full API coverage and powerful tools to get the most out of it.
 
-# Download Lavalink
-
-[Lavalink V2](https://ci.fredboat.com/viewType.html?buildTypeId=Lavalink_Build&branch_Lavalink=%3Cdefault%3E&tab=buildTypeStatusDiv)
-
-[Lavalink V3](https://ci.fredboat.com/viewType.html?buildTypeId=Lavalink_Build&branch_Lavalink=refs%2Fheads%2Fv3&tab=buildTypeStatusDiv)
+## Features
+- Regions
+- Multi-Node Support
+- Load Balancing (this includes region-based load balancing)
+- Equalizer
 
 # Getting Started
+You may clone this repository and check out [the docs](docs/). The docs are not hosted anywhere, or 100% complete at the time of writing. If you notice missing documentation, feel free to [open an issue](https://github.com/Devoxin/Lavalink.py/issues/) or [let us know in the Discord server](https://discord.gg/SbJXU9s).
 
-There aren't currently any docs for Lavalink.py at the time of writing (sorry!). We recommend that you check out the example music cogs, or check out the source itself!
+Additionally, there is an [example cog](lavalink/examples). It should be noted that the example cog is oriented towards usage with Discord.py rewrite and Lavalink v3.1+, although backwards
+compatibility may be possible, it's not encouraged nor is support guaranteed.
 
-If you're using Lavalink V3, check out [examples/music-v3.py](https://github.com/Devoxin/Lavalink.py/blob/master/examples/music-v3.py)
+## Optional Dependencies
 
-For Lavalink V2 users, check [examples/music-v2.py](https://github.com/Devoxin/Lavalink.py/blob/master/examples/music-v2.py)
+`aiodns`   - Speed up DNS resolving.
+
+`cchardet` - A faster alternative to `chardet`.
 
 # Links
 
-[Lavalink Wiki](https://github.com/Devoxin/Lavalink.py/wiki)
+[Discord Server](https://discord.gg/SbJXU9s)
 
-[Get Support](https://discord.gg/SbJXU9s)
+[Lavalink V3.1](https://ci.fredboat.com/guestAuth/repository/download/Lavalink_Build/.lastSuccessful/Lavalink.jar?branch=refs%2Fheads%2Fmaster)
