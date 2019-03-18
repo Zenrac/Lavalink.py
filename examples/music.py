@@ -9,11 +9,10 @@ import discord
 import lavalink
 from discord.ext import commands
 
-time_rx = re.compile('[0-9]+')
-url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
+url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')  # noqa: W605
 
 
-class Music:
+class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -24,14 +23,10 @@ class Music:
 
         bot.lavalink.add_event_hook(self.track_hook)
 
-    def __unload(self):
+    def cog_unload(self):
         self.bot.lavalink._event_hooks.clear()
 
-    async def track_hook(self, event):
-        if isinstance(event, lavalink.events.TrackEndEvent):
-            pass  # Send track ended message to channel.
-
-    async def __before_invoke(self, ctx):
+    async def cog_before_invoke(self, ctx):
         guild_check = ctx.guild is not None
         #  This is essentially the same as `@commands.guild_only()`
         #  except it saves us repeating ourselves (and also a few lines).
@@ -42,10 +37,26 @@ class Music:
 
         return guild_check
 
+    async def cog_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandInvokeError):
+            await ctx.send(error.original)
+            # The above handles errors thrown in this cog and shows them to the user.
+            # This shouldn't be a problem as the only errors thrown in this cog are from `ensure_voice`
+            # which contain a reason string, such as "Join a voicechannel" etc. You can modify the above
+            # if you want to do things differently.
+
+    async def track_hook(self, event):
+        if isinstance(event, lavalink.events.QueueEndEvent):
+            guild_id = int(event.player.guild_id)
+            await self.connect_to(guild_id, None)
+            # Disconnect from the channel -- there's nothing else to play.
+
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
+        # The above looks dirty, we could alternatively use `bot.shards[shard_id].ws` but that assumes
+        # the bot instance is an AutoShardedBot.
 
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query: str):
@@ -72,31 +83,23 @@ class Music:
 
             embed.title = 'Playlist Enqueued!'
             embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
-            await ctx.send(embed=embed)
         else:
             track = results['tracks'][0]
             embed.title = 'Track Enqueued'
             embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
-            await ctx.send(embed=embed)
             player.add(requester=ctx.author.id, track=track)
+
+        await ctx.send(embed=embed)
 
         if not player.is_playing:
             await player.play()
 
     @commands.command()
-    async def seek(self, ctx, *, time: str):
+    async def seek(self, ctx, *, seconds: int):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
-        seconds = time_rx.search(time)
-        if not seconds:
-            return await ctx.send('You need to specify the amount of seconds to skip!')
-
-        seconds = int(seconds.group()) * 1000
-        if time.startswith('-'):
-            seconds *= -1
-
-        track_time = player.position + seconds
+        track_time = player.position + (seconds * 1000)
         await player.seek(track_time)
 
         await ctx.send(f'Moved track to **{lavalink.utils.format_time(track_time)}**')
@@ -183,13 +186,13 @@ class Music:
 
     @commands.command(aliases=['vol'])
     async def volume(self, ctx, volume: int = None):
-        """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
+        """ Changes the player's volume (0-1000). """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
         if not volume:
             return await ctx.send(f'🔈 | {player.volume}%')
 
-        await player.set_volume(volume)
+        await player.set_volume(volume)  # Lavalink will automatically cap values between, or equal to 0-1000.
         await ctx.send(f'🔈 | Set to {player.volume}%')
 
     @commands.command()
@@ -224,8 +227,7 @@ class Music:
         if index > len(player.queue) or index < 1:
             return await ctx.send(f'Index has to be **between** 1 and {len(player.queue)}')
 
-        index -= 1
-        removed = player.queue.pop(index)
+        removed = player.queue.pop(index - 1)  # Account for 0-index.
 
         await ctx.send(f'Removed **{removed.title}** from the queue.')
 
@@ -240,7 +242,7 @@ class Music:
         results = await player.node.get_tracks(query)
 
         if not results or not results['tracks']:
-            return await ctx.send('Nothing found')
+            return await ctx.send('Nothing found.')
 
         tracks = results['tracks'][:10]  # First 10 results
 
