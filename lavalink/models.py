@@ -16,14 +16,14 @@ class TrackNotBuilt(Exception):
 
 class AudioTrack:
     __slots__ = ('track', 'identifier', 'is_seekable', 'author', 'duration', 'stream', 'title', 'uri', 'requester',
-                 'preferences', 'artwork')
+                 'extra', 'artwork')
 
     def __init__(self, requester, **kwargs):
         self.requester = requester
         self.preferences = kwargs
 
     @classmethod
-    def build(cls, track, requester, **kwargs):
+    def build(cls, track, requester, extra: dict = None):
         """ Returns an optional AudioTrack. """
         new_track = cls(requester, **kwargs)
         try:
@@ -36,6 +36,7 @@ class AudioTrack:
             new_track.title = track['info']['title']
             new_track.uri = track['info']['uri']
             new_track.artwork = track['info'].get('artwork', '')
+            new_track.extra = extra or {}
 
             return new_track
         except KeyError:
