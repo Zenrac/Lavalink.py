@@ -25,7 +25,7 @@ class AudioTrack:
     @classmethod
     def build(cls, track, requester, extra: dict = None):
         """ Returns an optional AudioTrack. """
-        new_track = cls(requester, **kwargs)
+        new_track = cls(requester)
         try:
             new_track.track = track['track']
             new_track.identifier = track['info']['identifier']
