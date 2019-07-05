@@ -20,7 +20,6 @@ class AudioTrack:
 
     def __init__(self, requester, **kwargs):
         self.requester = requester
-        self.preferences = kwargs
 
     @classmethod
     def build(cls, track, requester, extra: dict = None):
