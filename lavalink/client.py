@@ -48,7 +48,7 @@ class Client:
         self._shard_count = str(shard_count)
         self._loop = loop or asyncio.get_event_loop()
         self.node_manager = NodeManager(self, regions)
-        self.player_manager = PlayerManager(self, player)
+        self.players = PlayerManager(self, player)
         self.bot = bot
 
         self._event_hooks = []
