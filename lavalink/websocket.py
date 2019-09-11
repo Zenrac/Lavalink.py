@@ -57,7 +57,7 @@ class WebSocket:
 
             try:
                 self._ws = await self._session.ws_connect('ws://{}:{}'.format(self._host, self._port), headers=headers)
-            except aiohttp.ClientError:
+            except (aiohttp.ClientError, asyncio.TimeoutError):
                 if attempt == 1:
                     log.warning('[NODE-{}] Failed to establish connection!'.format(self._node.name))
 
