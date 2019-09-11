@@ -1,5 +1,5 @@
 from .node import Node
-from .models import BasePlayer
+from .models import BasePlayer, NodeException
 
 
 class PlayerManager:
