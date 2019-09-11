@@ -14,6 +14,10 @@ class TrackNotBuilt(Exception):
     """ This exception will be raised when AudioTrack objects hasn't been built. """
 
 
+class NodeException(Exception):
+    """ The exception will be raised when something went wrong with a node. """    
+
+
 class AudioTrack:
     __slots__ = ('track', 'identifier', 'is_seekable', 'author', 'duration', 'stream', 'title', 'uri', 'requester',
                  'extra', 'artwork')
