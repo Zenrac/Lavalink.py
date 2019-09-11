@@ -1,5 +1,5 @@
 from .node import Node
-from .models import BasePlayer
+from .models import BasePlayer, NodeException
 
 
 class PlayerManager:
@@ -99,7 +99,7 @@ class PlayerManager:
         node = self._lavalink.node_manager.find_ideal_node(region)
 
         if not node:
-            raise Exception('No available nodes!')  # TODO: NodeException or something
+            raise NodeException('No available nodes!')
 
         self.players[guild_id] = player = self.default_player(guild_id, node)
         return player

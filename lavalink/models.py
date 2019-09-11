@@ -14,18 +14,21 @@ class TrackNotBuilt(Exception):
     """ This exception will be raised when AudioTrack objects hasn't been built. """
 
 
+class NodeException(Exception):
+    """ The exception will be raised when something went wrong with a node. """    
+
+
 class AudioTrack:
     __slots__ = ('track', 'identifier', 'is_seekable', 'author', 'duration', 'stream', 'title', 'uri', 'requester',
-                 'preferences', 'artwork')
+                 'extra', 'artwork')
 
     def __init__(self, requester, **kwargs):
         self.requester = requester
-        self.preferences = kwargs
 
     @classmethod
-    def build(cls, track, requester, **kwargs):
+    def build(cls, track, requester, extra: dict = None):
         """ Returns an optional AudioTrack. """
-        new_track = cls(requester, **kwargs)
+        new_track = cls(requester)
         try:
             new_track.track = track['track']
             new_track.identifier = track['info']['identifier']
@@ -36,6 +39,7 @@ class AudioTrack:
             new_track.title = track['info']['title']
             new_track.uri = track['info']['uri']
             new_track.artwork = track['info'].get('artwork', '')
+            new_track.extra = extra or {}
 
             return new_track
         except KeyError:

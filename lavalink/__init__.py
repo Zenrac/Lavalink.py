@@ -9,7 +9,7 @@ __version__ = '3.0.0'
 
 from .client import Client
 from .events import TrackStartEvent, TrackStuckEvent, TrackExceptionEvent, TrackEndEvent, QueueEndEvent
-from .models import BasePlayer, DefaultPlayer, AudioTrack, NoPreviousTrack, InvalidTrack
+from .models import BasePlayer, DefaultPlayer, AudioTrack, NoPreviousTrack, InvalidTrack, NodeException
 from .node import Node
 from .nodemanager import NodeManager
 from .playermanager import PlayerManager

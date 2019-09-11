@@ -50,8 +50,6 @@ class Client:
         self.node_manager = NodeManager(self, regions)
         self.players = PlayerManager(self, player)
         self.bot = bot
-        if bot:
-            self.bot.lavalink = self
 
         self._event_hooks = []
 
