@@ -94,6 +94,8 @@ class Client:
         :param node:
             The node to use for track lookup. Leave this blank to use a random node.
         """
+        if not self.node_manager.available_nodes:
+            raise NodeException('No available nodes!')
         node = node or random.choice(self.node_manager.available_nodes)
         destination = 'http://{}:{}/loadtracks?identifier={}'.format(node.host, node.port, quote(query))
         headers = {
@@ -152,6 +154,8 @@ class Client:
         ---------
         An array of dicts representing track information.
         """
+        if not self.node_manager.available_nodes:
+            raise NodeException('No available nodes!')
         node = node or random.choice(self.node_manager.available_nodes)
         destination = 'http://{}:{}/decodetracks'.format(node.host, node.port)
         headers = {
