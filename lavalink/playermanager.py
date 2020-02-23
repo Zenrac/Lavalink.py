@@ -5,7 +5,8 @@ from .models import BasePlayer, NodeException
 class PlayerManager:
     def __init__(self, lavalink, player):
         if not issubclass(player, BasePlayer):
-            raise ValueError('Player must implement BasePlayer or DefaultPlayer.')
+            raise ValueError(
+                'Player must implement BasePlayer or DefaultPlayer.')
         self._lavalink = lavalink
         self.players = {}
         self.default_player = player
@@ -90,13 +91,9 @@ class PlayerManager:
         if guild_id in self.players:
             return self.players[guild_id]
 
-        if node:
-            return node
-
         if endpoint:
             region = self._lavalink.node_manager.get_region(endpoint)
-
-        node = self._lavalink.node_manager.find_ideal_node(region)
+            node = self._lavalink.node_manager.find_ideal_node(region)
 
         if not node:
             raise NodeException('No available nodes!')
