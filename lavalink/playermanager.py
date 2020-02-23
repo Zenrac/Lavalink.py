@@ -67,7 +67,7 @@ class PlayerManager:
         """
         return self.players.get(guild_id)
 
-    def create(self, guild_id: int, region: str = 'eu', endpoint: str = None, node: Node = None):
+    def create(self, guild_id: int, region: str = None, endpoint: str = None, node: Node = None):
         """
         Creates a player if one doesn't exist with the given information.
 
@@ -93,6 +93,8 @@ class PlayerManager:
 
         if endpoint:
             region = self._lavalink.node_manager.get_region(endpoint)
+
+        if not node:
             node = self._lavalink.node_manager.find_ideal_node(region)
 
         if not node:
