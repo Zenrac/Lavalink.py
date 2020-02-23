@@ -6,7 +6,7 @@ log = logging.getLogger('lavalink')
 
 
 class Node:
-    def __init__(self, manager, host: str, port: int, password: str, region: str, name: str, resume_key: str, resume_timeout: int):
+    def __init__(self, manager, host: str, port: int, password: str, region: str, name: str, resume_key: str, resume_timeout: int, is_perso: bool = False):
         self._manager = manager
         self._ws = WebSocket(self, host, port, password, resume_key, resume_timeout)
 
@@ -16,6 +16,7 @@ class Node:
         self.region = region
         self.name = name or '{}-{}:{}'.format(self.region, self.host, self.port)
         self.stats = None
+        self.is_perso = is_perso
 
     @property
     def available(self):
