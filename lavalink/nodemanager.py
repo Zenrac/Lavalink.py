@@ -44,7 +44,7 @@ class NodeManager:
         node = Node(self, host, port, password, region, name, resume_key, resume_timeout, is_perso, sould_reconnect)
         self.nodes.append(node)
 
-    def remove_node(self, node: Node, kill: bool = False):
+    def remove_node(self, node: Node):
         """
         Removes a node.
         ----------
@@ -52,9 +52,17 @@ class NodeManager:
             The node to remove from the list
         """
         self.nodes.remove(node)
-        if kill:
-            node._ws._sould_reconnect = False
-            await node._ws._ws.close()
+
+    async def destroy_node(self, node: Node):
+        """
+        Destroys a node.
+        ----------
+        :param node:
+            The node to destroy
+        """
+        self.remove_node(node)
+        node._ws._sould_reconnect = False
+        await node._ws._ws.close()
 
     def get_region(self, endpoint: str):
         """
