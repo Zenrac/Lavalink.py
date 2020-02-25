@@ -64,6 +64,18 @@ class NodeManager:
         node._ws._sould_reconnect = False
         await node._ws._ws.close()
 
+    def get_node_by_name(self, name):
+        """
+        Gets a node with its name.
+        ----------
+        :param name:
+            The name to search from the list
+        """
+        for node in self.all_available_nodes:
+            if node.name == name:
+                return node
+        return None
+
     def get_region(self, endpoint: str):
         """
         Returns a Lavalink.py-friendly region from a Discord voice server address
