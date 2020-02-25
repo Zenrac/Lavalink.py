@@ -21,13 +21,18 @@ class NodeManager:
             yield n
 
     @property
-    def available_nodes(self, show_all: bool = False):
+    def available_nodes(self):
         """
         Returns a list of available nodes.
         """
-        if show_all:
-            return [n for n in self.nodes if n.available]
         return [n for n in self.nodes if n.available and not n.is_perso]
+
+    @property
+    def all_available_nodes(self):
+        """
+        Returns a list of all available nodes.
+        """
+        return [n for n in self.nodes if n.available]
 
     def add_node(self, host: str, port: int, password: str, region: str, name: str = None,
                  resume_key: str = None, resume_timeout: int = 60, is_perso: bool = False, sould_reconnect: bool = True):
