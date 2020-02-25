@@ -8,7 +8,7 @@ log = logging.getLogger('lavalink')
 
 
 class WebSocket:
-    def __init__(self, node, host: str, port: int, password: str, resume_key: str, resume_timeout: int):
+    def __init__(self, node, host: str, port: int, password: str, resume_key: str, resume_timeout: int, sould_reconnect: bool = True):
         self._node = node
         self._lavalink = self._node._manager._lavalink
 
@@ -21,6 +21,7 @@ class WebSocket:
         self._password = password
         self._resume_key = resume_key
         self._resume_timeout = resume_timeout
+        self._sould_reconnect = sould_reconnect
 
         self._resuming_configured = False
 
@@ -52,7 +53,7 @@ class WebSocket:
 
         attempt = 0
 
-        while not self.connected:
+        while not self.connected and self._sould_reconnect:
             attempt += 1
 
             try:

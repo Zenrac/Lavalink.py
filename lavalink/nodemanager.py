@@ -30,16 +30,16 @@ class NodeManager:
         return [n for n in self.nodes if n.available and not n.is_perso]
 
     def add_node(self, host: str, port: int, password: str, region: str, name: str = None,
-                 resume_key: str = None, resume_timeout: int = 60, is_perso: bool = False):
+                 resume_key: str = None, resume_timeout: int = 60, is_perso: bool = False, sould_reconnect: bool = True):
         """
         Adds a node
         ----------
         TODO
         """
-        node = Node(self, host, port, password, region, name, resume_key, resume_timeout, is_perso)
+        node = Node(self, host, port, password, region, name, resume_key, resume_timeout, is_perso, sould_reconnect)
         self.nodes.append(node)
 
-    def remove_node(self, node: Node):
+    def remove_node(self, node: Node, kill: bool = False):
         """
         Removes a node.
         ----------
@@ -47,6 +47,9 @@ class NodeManager:
             The node to remove from the list
         """
         self.nodes.remove(node)
+        if kill:
+            node._ws._sould_reconnect = False
+            await node._ws._ws.close()
 
     def get_region(self, endpoint: str):
         """

@@ -62,8 +62,8 @@ class Client:
         if hook not in self._event_hooks:
             self._event_hooks.append(hook)
 
-    def add_node(self, host: str, password: str, region: str, port: int=2333, 
-                 resume_key: str = None, resume_timeout: int = 60, name: str = None):
+    def add_node(self, host: str, password: str, region: str, port: int=2333,
+                 resume_key: str = None, resume_timeout: int = 60, name: str = None, is_perso: bool = False, should_reconnect: bool = True):
         """
         Adds a node to Lavalink's node manager.
         ----------
@@ -82,7 +82,7 @@ class Client:
         :param name:
             An identifier for the node that will show in logs.
         """
-        self.node_manager.add_node(host, port, password, region, name, resume_key, resume_timeout)
+        self.node_manager.add_node(host, port, password, region, name, resume_key, resume_timeout, is_perso, should_reconnect)
 
     async def get_tracks(self, query: str, node: Node = None):
         """|coro|

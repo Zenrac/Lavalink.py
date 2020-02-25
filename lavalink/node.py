@@ -6,9 +6,9 @@ log = logging.getLogger('lavalink')
 
 
 class Node:
-    def __init__(self, manager, host: str, port: int, password: str, region: str, name: str, resume_key: str, resume_timeout: int, is_perso: bool = False):
+    def __init__(self, manager, host: str, port: int, password: str, region: str, name: str, resume_key: str, resume_timeout: int, is_perso: bool = False, sould_reconnect: bool = True):
         self._manager = manager
-        self._ws = WebSocket(self, host, port, password, resume_key, resume_timeout)
+        self._ws = WebSocket(self, host, port, password, resume_key, resume_timeout, sould_reconnect)
 
         self.host = host
         self.port = port
