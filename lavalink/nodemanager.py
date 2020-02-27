@@ -64,14 +64,15 @@ class NodeManager:
         node._ws._sould_reconnect = False
         await node._ws._ws.close()
 
-    def get_node_by_name(self, name):
+    def get_node_by_name(self, name, all: bool = False):
         """
         Gets a node with its name.
         ----------
-        :param name:
-            The name to search from the list
+        :param all:
+            If it should search in disconnected nodes too.
         """
-        for node in self.all_available_nodes:
+        nodes = self.nodes if all else self.all_available_nodes
+        for node in nodes:
             if node.name == name:
                 return node
         return None
