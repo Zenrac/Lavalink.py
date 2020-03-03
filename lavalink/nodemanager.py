@@ -62,7 +62,8 @@ class NodeManager:
         """
         self.remove_node(node)
         node._ws._sould_reconnect = False
-        await node._ws._ws.close()
+        if node._ws._ws:
+            await node._ws._ws.close()
 
     def get_node_by_name(self, name, all: bool = False):
         """
